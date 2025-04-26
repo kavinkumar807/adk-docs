@@ -131,6 +131,8 @@ nav:
     - Agent Engine: deploy/agent-engine.md
     - Cloud Run: deploy/cloud-run.md
     - GKE: deploy/gke.md
+  - Runconfig:
+    - run-config/index.md
   - Sessions & Memory:
     - sessions/index.md
     - Session: sessions/session.md
