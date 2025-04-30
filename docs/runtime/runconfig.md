@@ -9,8 +9,6 @@ agent interacts with models, handles audio, and streams responses. By default,
 no streaming is enabled and inputs aren’t retained as artifacts. Use `RunConfig`
 to override these defaults.
 
----
-
 ## Class Definition
 
 The `RunConfig` class is a Pydantic model that enforces strict validation of
@@ -33,12 +31,19 @@ class RunConfig(BaseModel):
     max_llm_calls: int = 500
 ```
 
-### Parameters
+## Runtime Parameters
 
-**`speech_config`**
+| Parameter                       | Type                                         | Default                | Description                                                                                                |
+| :------------------------------ | :------------------------------------------- | :--------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `speech_config`                 | `Optional[types.SpeechConfig]`               | `None`                 | Configures speech synthesis (voice, language) via nested `types.SpeechConfig`.                             |
+| `response_modalities`           | `Optional[list[str]]`                        | `None`                 | List of desired output modalities (e.g., `["TEXT", "AUDIO"]`). Default is `None`.                            |
+| `save_input_blobs_as_artifacts` | `bool`                                       | `False`                | If `True`, saves input blobs (e.g., uploaded files) as run artifacts for debugging/auditing.             |
+| `support_cfc`                   | `bool`                                       | `False`                | Enables Compositional Function Calling. Requires `streaming_mode=SSE` and uses the LIVE API. **Experimental.** |
+| `streaming_mode`                | `StreamingMode`                              | `StreamingMode.NONE`   | Sets the streaming behavior: `NONE` (default), `SSE` (server-sent events), or `BIDI` (bidirectional).        |
+| `output_audio_transcription`    | `Optional[types.AudioTranscriptionConfig]`   | `None`                 | Configures transcription of generated audio output via `types.AudioTranscriptionConfig`.                   |
+| `max_llm_calls`                 | `int`                                        | `500`                  | Limits total LLM calls per run. `0` or negative means unlimited (warned); `sys.maxsize` raises `ValueError`. |
 
-**Type:** `Optional[types.SpeechConfig]` <br/>
-**Default:** `None`
+### `speech_config`
 
 Speech configuration settings for live agents with audio capabilities. The
 `SpeechConfig` class has the following structure:
@@ -59,6 +64,7 @@ class SpeechConfig(_common.BaseModel):
 ```
 
 The `voice_config` parameter uses the `VoiceConfig` class:
+
 ```python
 class VoiceConfig(_common.BaseModel):
     """The configuration for the voice to use."""
@@ -89,29 +95,19 @@ These nested configuration classes allow you to specify:
 When implementing voice-enabled agents, configure these parameters to control
 how your agent sounds when speaking.
 
-**`response_modalities`**
-
-**Type:**  `Optional[list[str]]` <br/>
-**Default:** `None`
+### `response_modalities`
 
 Defines the output modalities for the agent. If not set, defaults to AUDIO.
 Response modalities determine how the agent communicates with users through
 various channels (e.g., text, audio).
 
-
-**`save_input_blobs_as_artifacts`**
-
-**Type:** `bool` <br/>
-**Default:** `False`
+### `save_input_blobs_as_artifacts`
 
 When enabled, input blobs will be saved as artifacts during agent execution.
 This is useful for debugging and audit purposes, allowing developers to review
 the exact data received by agents.
 
-**`support_cfc`**
-
-**Type:**  `bool` <br/>
-**Default:** `False`
+### `support_cfc`
 
 Enables Compositional Function Calling (CFC) support. Only applicable when using
 StreamingMode.SSE. When enabled, the LIVE API will be invoked as only it
@@ -119,13 +115,10 @@ supports CFC functionality.
 
 !!! warning
 
-    This feature is experimental and its API or behavior may change in future
-    releases.
+    The `support_cfc` feature is experimental and its API or behavior might
+    change in future releases.
 
-**`streaming_mode`**
-
-**Type:** `StreamingMode` (Enum) <br/>
-**Default:** `StreamingMode.NONE`
+### `streaming_mode`
 
 Configures the streaming behavior of the agent. Possible values:
 
@@ -135,19 +128,13 @@ Configures the streaming behavior of the agent. Possible values:
 
 Streaming modes affect both performance and user experience. SSE streaming lets users see partial responses as they're generated, while BIDI streaming enables real-time interactive experiences.
 
-**`output_audio_transcription`**
-
-**Type:** `Optional[types.AudioTranscriptionConfig]` <br/>
-**Default:** `None`
+### `output_audio_transcription`
 
 Configuration for transcribing audio outputs from live agents with audio
 response capability. This enables automatic transcription of audio responses for
 accessibility, record-keeping, and multi-modal applications.
 
-**`max_llm_calls`**
-
-**Type:** `int` <br/>
-**Default:** `500`
+### `max_llm_calls`
 
 Sets a limit on the total number of LLM calls for a given agent run.
 
@@ -158,17 +145,19 @@ This parameter prevents excessive API usage and potential runaway processes.
 Since LLM calls often incur costs and consume resources, setting appropriate
 limits is crucial.
 
----
 ## Validation Rules
-The `RunConfig` class validates the `max_llm_calls` parameter:
+
+As a Pydantic model, `RunConfig` automatically validates parameter types.
+In addition, it includes specific validation logic for the `max_llm_calls`
+parameter:
 
 1. If set to `sys.maxsize`, a `ValueError` is raised to prevent integer overflow issues
 2. If less than or equal to 0, a warning is logged about potential unlimited LLM calls
 
----
 ## Examples
 
-### Basic configuration
+### Basic runtime configuration
+
 ```python
 from google.genai.adk import RunConfig, StreamingMode
 
@@ -182,7 +171,8 @@ This configuration creates a non-streaming agent with a limit of 100 LLM calls,
 suitable for simple task-oriented agents where complete responses are
 preferable.
 
-### Enabling Streaming
+### Enabling streaming
+
 ```python
 from google.genai.adk import RunConfig, StreamingMode
 
@@ -194,7 +184,8 @@ config = RunConfig(
 Using SSE streaming allows users to see responses as they're generated,
 providing a more responsive feel for chatbots and assistants.
 
-### With Speech Support
+### Enabling speech support
+
 ```python
 from google.genai.adk import RunConfig, StreamingMode
 from google.genai import types
@@ -218,14 +209,14 @@ config = RunConfig(
 
 This comprehensive example configures an agent with:
 
-* Speech capabilities using the "Kore" voice with English US language
+* Speech capabilities using the "Kore" voice (US English)
 * Both audio and text output modalities
 * Artifact saving for input blobs (useful for debugging)
 * Experimental CFC support enabled
 * SSE streaming for responsive interaction
 * A limit of 1000 LLM calls
 
-### With Experimental CFC Support
+### Enabling Experimental CFC Support
 
 ```python
 from google.genai.adk import RunConfig, StreamingMode
